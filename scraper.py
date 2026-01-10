@@ -7,7 +7,7 @@ import sys
 import random
 import time
 import json
-import datetime
+from datetime import datetime, timezone
 from yaspin import yaspin
 
 
@@ -24,7 +24,7 @@ PAGE_LIMIT = 3
 def load_from_web(url):
     # Implement random delay to avoid being blocked
     with yaspin() as sp:
-        delay = random.randint(1, 3)
+        delay = random.randint(DELAY_RANGE[0], DELAY_RANGE[1])
         for i in range(delay, 0, -1):
             sp.text = f"Applying {i}s random delay..."
             time.sleep(1)
@@ -88,9 +88,9 @@ def fetch_chapter(url, force=False):
         save = False
 
     # Save the page to the cache if it was loaded from the web
-    if page is not None: #and save:
+    if page is not None and save:
         with open(path, "w") as file:
-            file.write(BeautifulSoup(page, "html.parser").prettify())
+            file.write(page)
         print(f"Saved page to \"{path}\"")
 
         # Update the index data upon scraping and saving a page
@@ -102,7 +102,7 @@ def fetch_chapter(url, force=False):
             data = []
 
         # Format the current date and time as the
-        date_scraped = datetime.datetime.now(datetime.timezone.utc).strftime(r"%Y-%m-%dT%H:%M:%SZ")
+        date_scraped = datetime.now(timezone.utc).strftime(r"%Y-%m-%dT%H:%M:%SZ")
         # Create the data entry for the page
         info = {
             "id": id,
