@@ -18,23 +18,25 @@ def format(page, metadata):
         out = BeautifulSoup(file.read(), "html.parser")
 
     print("\nParsing source HTML:")
+    info = {}
 
 
     # Identify the container for the chapter title
     title_tag = raw.find(class_="elementor-element elementor-element-3d7596e elementor-widget elementor-widget-heading")
     if title_tag is None:
         print("Error: Could not find title container!")
-        return None
+        return None, None
 
     # Get the tag with the chapter title
     title_tag = title_tag.find("h2")
     if title_tag is None:
         print("Error: Could not find title!")
-        return None
+        return None, None
 
     # Clean up and print the chapter title
     title = title_tag.string.strip()
     print(f"Title: {title}")
+    info["title"] = title
 
     # Replace title string
     title_tag = out.find(class_="title")
@@ -46,17 +48,18 @@ def format(page, metadata):
     date_tag = raw.find(class_="elementor-element elementor-element-8aba006 elementor-widget elementor-widget-text-editor")
     if date_tag is None:
         print("Error: Could not find date container!")
-        return None
+        return None, None
 
     # Get the tag with the chapter date
     date_tag = date_tag.find(class_="elementor-widget-container")
     if date_tag is None:
         print("Error: Could not find date tag!")
-        return None
+        return None, None
 
     # Clean up and pring the publishing date
     date = date_tag.string.strip()
     print(f"Date published: {date}")
+    info["date_published"] = date
 
     # Replace date published string
     date_tag = out.find(class_="date_published")
@@ -93,20 +96,22 @@ def format(page, metadata):
     chapter_raw = raw.find(class_="twi-article")
     if chapter_raw is None:
         print("Error: Could not chapter content!")
-        return None
+        return None, None
 
     # Strip the bottom links from the chapter contenthtml.unsecape(
     for i in range(6):
         print(f"Removed extraneous tag {i+1}: {repr(chapter_raw.contents.pop(-1))}")
 
     # Print the word count of the chapter content
-    print(f"Content: {len(chapter_raw.get_text().split())} words")
+    wc = len(chapter_raw.get_text().split())
+    print(f"Content: {wc} words")
+    info["word_count"] = wc
 
     # Replace chapter contents
     chapter_out = out.find(class_="content")
     chapter_out.extend(chapter_raw.contents)
 
-    return out.decode(), title
+    return out.decode(), info
 
 
 def format_index(data):
@@ -122,22 +127,31 @@ def format_index(data):
     date_tag = soup.find(class_="generated")
     date_tag.string = "Date generated: " + date
 
-    # Finds the list and extracts the item template
-    list_tag = soup.find(class_="list")
-    item_template = list_tag.find("li").extract()
-    list_tag.clear()
-    print("List entries:")
+    # Finds the table and extracts the row template
+    table_tag = soup.find(class_="contents")
+    row_template = table_tag.find(class_="row").extract()
+    print("Table rows:")
     # Add a list item for each chapter
-    for chapter in data:
-        item_tag = copy.deepcopy(item_template)
+    for i, chapter in enumerate(data):
+        row_tag = copy.deepcopy(row_template)
+
+        number_tag = row_tag.find(class_="number")
+        number_tag.string = str(i+1)
         
         link = "./" + chapter["id"] + ".html"
-        link_tag = item_tag.find("a")
+        link_tag = row_tag.find(class_="title").find("a")
         link_tag.attrs["href"] = link
-        link_tag.string = chapter["title"]
-        print(item_tag)
-        list_tag.append(item_tag)
-        list_tag.append("\n")
+        link_tag.string = chapter.get("title", "N/A")
+
+        wc_tag = row_tag.find(class_="word_count")
+        wc_tag.string = f"{chapter.get("word_count", 0):,}"
+
+        date_tag = row_tag.find(class_="date")
+        date_tag.string = chapter.get("date_published", "N/A")
+
+        print(row_tag)
+        table_tag.append(row_tag)
+        table_tag.append("\n")
     
     # Save the formatted html file
     path = Path.cwd() / "out/index.html"
@@ -165,11 +179,11 @@ def format_chapters(data):
             metadata["prev"] = data[i-1]["id"]
 
         # Translate the existing chapter into the template
-        page, title = format(page, metadata)
+        page, info = format(page, metadata)
         if page is None:
             continue
 
-        chapter["title"] = title
+        chapter.update(info)
 
         # Save the formatted html file
         path = Path.cwd() / "out" / (chapter["id"] + ".html")
