@@ -2,13 +2,15 @@
 
 import sys
 import json
+import copy
 from pathlib import Path
+from datetime import datetime, timezone
 from bs4 import BeautifulSoup
 
 from scraper import load_from_file
 
 
-def parse(page, metadata):
+def format(page, metadata):
     # Set up BeautifulSoup for raw input file
     raw = BeautifulSoup(page, "html.parser")
 
@@ -106,18 +108,43 @@ def parse(page, metadata):
     chapter_out = out.find(class_="content")
     chapter_out.extend(chapter_raw.contents)
 
-    return out.decode()
+    return out.decode(), title
 
 
-def main():
-    # Open the data file if it exists
-    data_path = Path.cwd() / "index.json"
-    if data_path.exists():
-        with open(data_path, "r") as file:
-            data = json.load(file)
-    else:
-        sys.exit()
+def format_index(data):
+    # Sets up beautiful soup
+    template_path = Path.cwd() / "template_index.html"
+    with open(template_path, "r") as file:
+        soup = BeautifulSoup(file.read(), "html.parser")
+    
+    # Replace date generated string
+    date = datetime.now(timezone.utc).strftime(r"%Y-%m-%dT%H:%M:%SZ")
+    print(f"Date generated: {date}")
+    date_tag = soup.find(class_="generated")
+    date_tag.string = "Date generated: " + date
 
+    # Finds the list and extracts the item template
+    list_tag = soup.find(class_="list")
+    item_template = list_tag.find("li").extract()
+    list_tag.clear()
+    # Add a list item for each chapter
+    for chapter in data:
+        item_tag = copy.deepcopy(item_template)
+        
+        link = "./" + chapter["id"] + ".html"
+        link_tag = item_tag.find("a")
+        link_tag.attrs["href"] = link
+        link_tag.string = chapter["title"]
+        list_tag.append(item_tag)
+        list_tag.append("\n")
+    
+    # Save the formatted html file
+    path = Path.cwd() / "out/index.html"
+    with open(path, "w") as file:
+        file.write(soup.decode())
+
+
+def format_chapters(data):
     # For each chapter entry in the data file
     for i, chapter in enumerate(data):
         page = load_from_file(Path(chapter["raw"]))
@@ -137,14 +164,31 @@ def main():
             metadata["prev"] = data[i-1]["id"]
 
         # Translate the existing chapter into the template
-        page = parse(page, metadata)
+        page, title = format(page, metadata)
         if page is None:
             continue
+
+        chapter["title"] = title
 
         # Save the formatted html file
         path = Path.cwd() / "out" / (chapter["id"] + ".html")
         with open(path, "w") as file:
             file.write(page)
+        
+        chapter["out"] = path
+
+
+def main():
+    # Open the data file if it exists
+    data_path = Path.cwd() / "index.json"
+    if data_path.exists():
+        with open(data_path, "r") as file:
+            data = json.load(file)
+    else:
+        sys.exit()
+    
+    format_chapters(data)
+    format_index(data)
 
 
 if __name__ == "__main__":
