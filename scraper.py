@@ -12,13 +12,38 @@ from yaspin import yaspin
 
 
 START = "https://wanderinginn.com/2017/03/03/rw1-00/"
+DATA_PATH = Path.cwd() / "index.json"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:146.0) Gecko/20100101 Firefox/146.0",
     "Accept-Language": "en-US,en;q=0.5",
-    "Accept-Encoding": "gzip, deflate"
+    "Accept-Encoding": "gzip, deflate",
+    "Accept-Charset": "utf-8"
 }
 DELAY_RANGE = [5, 15]
-PAGE_LIMIT = 3
+TIMEOUT = 30
+
+
+def get_start(id=None):
+    # Check whether the data file exists
+    if not DATA_PATH.exists():
+        return START
+    
+    # Load the data file
+    with open(DATA_PATH, "r") as file:
+        data = json.load(file)
+    
+    # Return the most recent if no id specified
+    if id is None:    
+        # Return the url of the last entry in the data file
+        return data[-1]["url"]
+    
+    # Return the specified chapter url if it exists
+    for chapter in data:
+        if chapter["id"] == id:
+            return chapter["url"]
+    
+    print("Error: Specified starting chapter does not exist!")
+    sys.exit()
 
 
 def load_from_web(url):
@@ -35,7 +60,7 @@ def load_from_web(url):
     start = time.time()
     with yaspin(text=f"Making request to {url}") as sp:
         try:
-            response = requests.get(url, headers=HEADERS)
+            response = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
             sp.stop()
             print(sp.text)
         except Exception as e:
@@ -53,7 +78,7 @@ def load_from_web(url):
     print(f"{int(len(response.content) / 1024)}kb recieved")
     print(f"Request successfully completed in {delay:.3f}s with code: {response.status_code}")
 
-    return response.content
+    return response.text
 
 
 def load_from_file(fname):
@@ -94,9 +119,8 @@ def fetch_chapter(url, force=False):
         print(f"Saved page to \"{path}\"")
 
         # Update the index data upon scraping and saving a page
-        data_path = Path.cwd() / "index.json"
-        if data_path.exists():
-            with open(data_path, "r") as file:
+        if DATA_PATH.exists():
+            with open(DATA_PATH, "r") as file:
                 data = json.load(file)
         else:
             data = []
@@ -123,10 +147,10 @@ def fetch_chapter(url, force=False):
             data.append(info)
         
         # Write the updated data file
-        with open(data_path, "w") as file:
+        with open(DATA_PATH, "w") as file:
             json.dump(data, file, indent=2)
         
-        print(f"Updated \"{data_path}\" with page info")
+        print(f"Updated \"{DATA_PATH}\" with page info")
     
     return page
 
@@ -143,9 +167,9 @@ def parse_next(page):
 
 def main():
     # Set the starting chapter url
-    current_url = START
+    current_url = get_start()
     # Repeat within a set page limit
-    for _ in range(3):
+    for _ in range(100):
         # Fetch the current chapter
         page = fetch_chapter(current_url)
         # If failed, the program cannot continue
