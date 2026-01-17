@@ -110,6 +110,7 @@ def format(page, metadata):
 
 
 def format_index(data):
+    print("Generating table of contents:")
     # Sets up beautiful soup
     template_path = Path.cwd() / "template_index.html"
     with open(template_path, "r") as file:
@@ -125,6 +126,7 @@ def format_index(data):
     list_tag = soup.find(class_="list")
     item_template = list_tag.find("li").extract()
     list_tag.clear()
+    print("List entries:")
     # Add a list item for each chapter
     for chapter in data:
         item_tag = copy.deepcopy(item_template)
@@ -133,6 +135,7 @@ def format_index(data):
         link_tag = item_tag.find("a")
         link_tag.attrs["href"] = link
         link_tag.string = chapter["title"]
+        print(item_tag)
         list_tag.append(item_tag)
         list_tag.append("\n")
     

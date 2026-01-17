@@ -18,6 +18,7 @@ HEADERS = {
     "Accept-Charset": "utf-8"
 }
 DELAY_RANGE = [5, 15]
+MAX_ATTEMPTS = 3
 TIMEOUT = 30
 
 
@@ -104,7 +105,13 @@ def fetch_chapter(url, force=False):
         page = load_from_file(path)
         save = False
     if force or page is None:
-        page = load_from_web(url)
+        page = None
+        attempts = 0
+        while page is None and attempts < MAX_ATTEMPTS:
+            if attempts > 0:
+                print(f"Retrying, attempt number {attempts+1} out of {MAX_ATTEMPTS}...")
+            page = load_from_web(url)
+            attempts += 1
         save = True
     if page is None and force:
         page = load_from_file(path)
@@ -167,12 +174,11 @@ def main():
     # Set the starting chapter url
     current_url = get_start()
     # Repeat within a set page limit
-    for _ in range(100):
+    while True:
         # Fetch the current chapter
         page = fetch_chapter(current_url)
         # If failed, the program cannot continue
         if page is None:
-            print("Failed to source page from either web or local cache")
             sys.exit()
         
         # Find the link to the next page
@@ -182,7 +188,7 @@ def main():
             print("Link to next chapter invalid")
             sys.exit()
         else:
-            print(f"Link to next chapter found: {next}")
+            print(f"Link to next chapter found: {next}\n")
             current_url = next
 
 
