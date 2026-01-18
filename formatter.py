@@ -1,6 +1,8 @@
+import os
 import sys
 import json
 import copy
+import pandas as pd
 from pathlib import Path
 from datetime import datetime, timezone
 from bs4 import BeautifulSoup
@@ -17,7 +19,7 @@ def format(page, metadata):
     with open(template_path, "r") as file:
         out = BeautifulSoup(file.read(), "html.parser")
 
-    print("\nParsing source HTML:")
+    print("Parsing and reformatting source HTML...")
     info = {}
 
 
@@ -98,9 +100,9 @@ def format(page, metadata):
         print("Error: Could not chapter content!")
         return None, None
 
-    # Strip the bottom links from the chapter contenthtml.unsecape(
+    # Strip the bottom links from the chapter
     for i in range(6):
-        print(f"Removed extraneous tag {i+1}: {repr(chapter_raw.contents.pop(-1))}")
+        chapter_raw.contents.pop(-1)
 
     # Print the word count of the chapter content
     wc = len(chapter_raw.get_text().split())
@@ -115,7 +117,7 @@ def format(page, metadata):
 
 
 def format_index(data):
-    print("Generating table of contents:")
+    print("Generating table of contents,,,")
     # Sets up beautiful soup
     template_path = Path.cwd() / "template_index.html"
     with open(template_path, "r") as file:
@@ -162,6 +164,7 @@ def format_index(data):
 def format_chapters(data):
     # For each chapter entry in the data file
     for i, chapter in enumerate(data):
+        print()
         page = load_from_file(Path(chapter["raw"]))
         if page is None:
             continue
@@ -190,6 +193,8 @@ def format_chapters(data):
         with open(path, "w") as file:
             file.write(page)
         
+        print(f"Saved reformatted page to \"{path}\"")
+        
         chapter["out"] = path
 
 
@@ -204,6 +209,10 @@ def main():
     
     format_chapters(data)
     format_index(data)
+
+    table_path = Path.cwd() / "table.csv"
+    df = pd.DataFrame(data)
+    df.to_csv(table_path)
 
 
 if __name__ == "__main__":

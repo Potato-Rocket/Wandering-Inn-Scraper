@@ -34,7 +34,7 @@ def get_start(id=None):
     # Return the most recent if no id specified
     if id is None:    
         # Return the url of the last entry in the data file
-        return data[-1]["url"]
+        return data[-2]["url"]
     
     # Return the specified chapter url if it exists
     for chapter in data:
