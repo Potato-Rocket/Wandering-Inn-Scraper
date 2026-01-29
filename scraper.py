@@ -87,7 +87,7 @@ def load_from_file(fname):
         return None
     
     # Open and read the file
-    with open(fname, "r") as file:
+    with open(fname, "r", encoding="utf-8") as file:
         text = file.read()
 
     print(f"Successfully loaded {int(len(text) / 1024)}kb file {fname}")
@@ -119,7 +119,7 @@ def fetch_chapter(url, force=False):
 
     # Save the page to the cache if it was loaded from the web
     if page is not None and save:
-        with open(path, "w") as file:
+        with open(path, "w", encoding="utf-8") as file:
             file.write(page)
         print(f"Saved page to \"{path}\"")
 

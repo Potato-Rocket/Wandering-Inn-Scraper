@@ -1,4 +1,3 @@
-import os
 import sys
 import json
 import copy
@@ -117,10 +116,10 @@ def format(page, metadata):
 
 
 def format_index(data):
-    print("Generating table of contents,,,")
+    print("Generating table of contents...")
     # Sets up beautiful soup
     template_path = Path.cwd() / "template_index.html"
-    with open(template_path, "r") as file:
+    with open(template_path, "r", encoding="utf-8") as file:
         soup = BeautifulSoup(file.read(), "html.parser")
     
     # Replace date generated string
@@ -157,7 +156,7 @@ def format_index(data):
     
     # Save the formatted html file
     path = Path.cwd() / "out/index.html"
-    with open(path, "w") as file:
+    with open(path, "w", encoding="utf-8") as file:
         file.write(soup.decode())
 
 
