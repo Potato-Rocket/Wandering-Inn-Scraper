@@ -1,0 +1,19 @@
+[project]
+name = "wandering-inn-scraper"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "beautifulsoup4",
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "requests",
+    "tqdm",
+    "yaspin",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel",
+    "jupyter",
+]

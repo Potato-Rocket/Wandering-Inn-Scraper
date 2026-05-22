@@ -2,6 +2,26 @@
 
 This project is a loose collection of Python scripts and Jupyter Notebooks designed to webscrape, store, reformat, and analyze the text of [The Wandering Inn](https://wanderinginn.com/), an excellent web-fiction written by Pirateaba. This was partially a project of curosity, as there are no literary works of comparable scope that I am aware of and I am a deeply invested fan. Additionally, this project has served as a basic excercise in web-scraping, HTML processing, and related Python skills. It also allows me to have my web-fiction safely backed up locally, which pleases the digital preservationist in me. That said, I highly reccommend giving it a read on the author's own website and giving support to their work if you are able!
 
+## Setup
+
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management. To get started:
+
+```bash
+# Install uv if you don't have it
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create the virtual environment and install all dependencies
+uv sync --all-groups
+
+# Run a script
+uv run scraper.py
+
+# Launch Jupyter for the notebooks
+uv run jupyter lab
+```
+
+The `--all-groups` flag includes the `dev` group, which adds Jupyter. Omit it if you only need to run the scripts.
+
 ## Files and Directories
 
 ```bash
