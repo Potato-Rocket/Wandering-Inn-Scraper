@@ -8,6 +8,7 @@ dependencies = [
     "numpy",
     "pandas",
     "requests",
+    "scipy>=1.17.1",
     "tqdm",
     "yaspin",
 ]
